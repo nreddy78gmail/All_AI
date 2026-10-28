@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WealthFlow — Net Worth Calculator & Financial Health Tracker</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              200: '#bbf7d0',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              900: '#14532d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200">
+
+  <!-- Navigation / Header -->
+  <header class="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20 font-bold text-xl">
+          $
+        </div>
+        <div>
+          <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 bg-clip-text text-transparent dark:from-emerald-400 dark:to-cyan-400">WealthFlow</span>
+          <span class="hidden sm:inline-block text-xs uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold ml-2">Net Worth Calculator</span>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <!-- Currency Selector -->
+        <div class="relative">
+          <select id="currencySelector" class="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-sm rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-emerald-500 focus:outline-none cursor-pointer">
+            <option value="USD">USD ($)</option>
+            <option value="EUR">EUR (€)</option>
+            <option value="GBP">GBP (£)</option>
+            <option value="CAD">CAD ($)</option>
+            <option value="AUD">AUD ($)</option>
+            <option value="INR">INR (₹)</option>
+            <option value="JPY">JPY (¥)</option>
+          </select>
+        </div>
+
+        <!-- Load Sample Data -->
+        <button id="loadSampleBtn" title="Load realistic sample numbers" class="px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+          Load Sample
+        </button>
+
+        <!-- Actions Dropdown / Quick buttons -->
+        <div class="relative group">
+          <button id="exportMenuBtn" class="px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center gap-1">
+            <span>Actions</span>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </button>
+          <div class="absolute right-0 mt-1 w-44 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700 py-1 hidden group-hover:block hover:block z-50">
+            <button id="exportCsvBtn" class="w-full text-left px-4 py-2 text-xs sm:text-sm text-slate-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:text-emerald-600 flex items-center gap-2">
+              <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              Export CSV
+            </button>
+            <button id="printReportBtn" class="w-full text-left px-4 py-2 text-xs sm:text-sm text-slate-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:text-emerald-600 flex items-center gap-2">
+              <svg class="w-4 h-4 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+              Print / Save PDF
+            </button>
+            <div class="border-t border-slate-200 dark:border-slate-700 my-1"></div>
+            <button id="resetAllBtn" class="w-full text-left px-4 py-2 text-xs sm:text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+              Reset All
+            </button>
+          </div>
+        </div>
+
+        <!-- Dark / Light Toggle -->
+        <button id="themeToggleBtn" aria-label="Toggle theme" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+          <svg id="moonIcon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+          <svg id="sunIcon" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+    <!-- KPI Summary Dashboard Cards -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-6" aria-label="Net Worth Overview">
+      <!-- Net Worth Card -->
+      <div class="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-teal-700 to-slate-900 text-white rounded-3xl p-6 sm:p-7 shadow-xl shadow-emerald-900/10">
+        <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="flex items-center justify-between">
+          <span class="text-xs uppercase tracking-widest font-semibold text-emerald-200">Total Net Worth</span>
+          <span id="healthBadge" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-sm text-emerald-100">
+            Positive
+          </span>
+        </div>
+        <div class="mt-4">
+          <h2 id="netWorthDisplay" class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight">$0</h2>
+          <p class="text-emerald-100 text-xs mt-2 flex items-center gap-1.5">
+            <span>Assets minus Liabilities</span>
+            <span id="confettiTrigger" class="cursor-pointer hover:scale-125 transition inline-block" title="Celebrate! 🎉">🎉</span>
+          </p>
+        </div>
+        <!-- Progress to Milestone -->
+        <div class="mt-6 pt-4 border-t border-white/15">
+          <div class="flex justify-between text-xs text-emerald-100 mb-1.5">
+            <span>Target Milestone: <strong id="milestoneTargetText">$100,000</strong></span>
+            <span id="milestonePercent">0%</span>
+          </div>
+          <div class="w-full bg-white/20 rounded-full h-2 overflow-hidden">
+            <div id="milestoneProgressBar" class="bg-emerald-300 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Total Assets Card -->
+      <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-7 border border-slate-200/80 dark:border-slate-800 shadow-sm relative overflow-hidden">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <div class="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+              ↑
+            </div>
+            <span class="text-xs uppercase tracking-widest font-semibold text-slate-500 dark:text-slate-400">Total Assets</span>
+          </div>
+          <span id="assetCountBadge" class="text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">0 items</span>
+        </div>
+        <div class="mt-4">
+          <h3 id="totalAssetsDisplay" class="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">$0</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">Cash, investments, property & valuables</p>
+        </div>
+        <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+          <span class="text-slate-500 dark:text-slate-400">Largest Category:</span>
+          <span id="topAssetCategory" class="font-semibold text-slate-800 dark:text-slate-200">—</span>
+        </div>
+      </div>
+
+      <!-- Total Liabilities Card -->
+      <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-7 border border-slate-200/80 dark:border-slate-800 shadow-sm relative overflow-hidden">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <div class="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center font-bold">
+              ↓
+            </div>
+            <span class="text-xs uppercase tracking-widest font-semibold text-slate-500 dark:text-slate-400">Total Liabilities</span>
+          </div>
+          <span id="liabilityCountBadge" class="text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">0 items</span>
+        </div>
+        <div class="mt-4">
+          <h3 id="totalLiabilitiesDisplay" class="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">$0</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">Mortgages, loans & credit balances</p>
+        </div>
+        <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+          <span class="text-slate-500 dark:text-slate-400">Debt-to-Asset Ratio:</span>
+          <span id="debtRatioDisplay" class="font-semibold text-slate-800 dark:text-slate-200">0%</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Two-Column Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      
+      <!-- Left Column: Asset & Liability Item Managers (7 cols) -->
+      <div class="lg:col-span-7 space-y-6">
+        
+        <!-- Toggle Tabs: Assets / Liabilities -->
+        <div class="bg-white dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 flex space-x-1">
+          <button id="tabAssetsBtn" class="flex-1 py-2.5 text-center text-sm font-semibold rounded-xl transition bg-emerald-600 text-white shadow-sm flex items-center justify-center gap-2">
+            <span>Assets</span>
+            <span id="tabAssetsPill" class="text-xs px-2 py-0.5 rounded-full bg-white/20">$0</span>
+          </button>
+          <button id="tabLiabilitiesBtn" class="flex-1 py-2.5 text-center text-sm font-semibold rounded-xl transition text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center justify-center gap-2">
+            <span>Liabilities</span>
+            <span id="tabLiabilitiesPill" class="text-xs px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800">$0</span>
+          </button>
+        </div>
+
+        <!-- ASSETS PANEL -->
+        <section id="assetsPanel" class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 sm:p-7 space-y-6">
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+            <div>
+              <h2 class="text-lg font-bold text-slate-900 dark:text-white">Assets Breakdown</h2>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Everything you own of economic value.</p>
+            </div>
+            <button id="openAddAssetModalBtn" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold px-3.5 py-2 rounded-xl transition shadow-sm shadow-emerald-600/20">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              <span>Add Asset</span>
+            </button>
+          </div>
+
+          <!-- Category Filter Quick Pills -->
+          <div id="assetCategoryFilters" class="flex flex-wrap gap-1.5 text-xs">
+            <button data-cat="all" class="cat-filter-btn px-3 py-1 rounded-full font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">All</button>
+            <button data-cat="Cash & Liquid" class="cat-filter-btn px-3 py-1 rounded-full font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">Cash</button>
+            <button data-cat="Investments" class="cat-filter-btn px-3 py-1 rounded-full font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">Investments</button>
+            <button data-cat="Retirement" class="cat-filter-btn px-3 py-1 rounded-full font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">Retirement</button>
+            <button data-cat="Real Estate" class="cat-filter-btn px-3 py-1 rounded-full font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">Real Estate</button>
+            <button data-cat="Vehicles & Valuables" class="cat-filter-btn px-3 py-1 rounded-full font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">Vehicles & Valuables</button>
+          </div>
+
+          <!-- Assets Item List -->
+          <div id="assetsList" class="space-y-3 min-h-[160px]">
+            <!-- Rendered via JS -->
+          </div>
+        </section>
+
+        <!-- LIABILITIES PANEL -->
+        <section id="liabilitiesPanel" class="hidden bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 sm:p-7 space-y-6">
+          <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+            <div>
+              <h2 class="text-lg font-bold text-slate-900 dark:text-white">Liabilities Breakdown</h2>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Everything you owe to creditors or lenders.</p>
+            </div>
+            <button id="openAddLiabilityModalBtn" class="inline-flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs sm:text-sm font-semibold px-3.5 py-2 rounded-xl transition shadow-sm shadow-rose-600/20">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              <span>Add Liability</span>
+            </button>
+          </div>
+
+          <!-- Category Filter Quick Pills -->
+          <div id="liabilityCategoryFilters" class="flex flex-wrap gap-1.5 text-xs">
+            <button data-cat="all" class="cat-filter-btn px-3 py-1 rounded-full font-medium bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300">All</button>
+            <button data-cat="Mortgages" class="cat-filter-btn px-3 py-1 rounded-full font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">Mortgages</button>
+            <button data-cat="Auto Loans" class="cat-filter-btn px-3 py-1 rounded-full font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">Auto Loans</button>
+            <button data-cat="Student Loans" class="cat-filter-btn px-3 py-1 rounded-full font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">Student Loans</button>
+            <button data-cat="Credit Cards" class="cat-filter-btn px-3 py-1 rounded-full font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">Credit Cards</button>
+            <button data-cat="Other Debt" class="cat-filter-btn px-3 py-1 rounded-full font-medium bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">Other Debt</button>
+          </div>
+
+          <!-- Liabilities Item List -->
+          <div id="liabilitiesList" class="space-y-3 min-h-[160px]">
+            <!-- Rendered via JS -->
+          </div>
+        </section>
+
+      </div>
+
+      <!-- Right Column: Visual Charts & Financial Health Insights (5 cols) -->
+      <div class="lg:col-span-5 space-y-6">
+        
+        <!-- Asset Allocation Doughnut Chart Card -->
+        <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Asset Allocation</h3>
+            <span class="text-xs text-slate-400">By Category</span>
+          </div>
+          <div class="relative h-64 flex items-center justify-center">
+            <canvas id="assetsChart"></canvas>
+            <div id="chartPlaceholder" class="hidden absolute inset-0 flex items-center justify-center text-xs text-slate-400">
+              No asset data yet
+            </div>
+          </div>
+        </div>
+
+        <!-- Net Worth Comparison Bar / Balance -->
+        <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Balance Sheet Summary</h3>
+            <span class="text-xs text-slate-400">Assets vs Debts</span>
+          </div>
+          <div class="space-y-4">
+            <div>
+              <div class="flex justify-between text-xs mb-1">
+                <span class="font-medium text-slate-600 dark:text-slate-400">Assets Share</span>
+                <span id="assetRatioText" class="font-bold text-emerald-600 dark:text-emerald-400">100%</span>
+              </div>
+              <div class="w-full bg-slate-100 dark:bg-slate-800 h-3 rounded-full overflow-hidden flex">
+                <div id="assetsBarRatio" class="bg-emerald-500 h-full transition-all duration-300" style="width: 100%"></div>
+                <div id="liabilitiesBarRatio" class="bg-rose-500 h-full transition-all duration-300" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <!-- Health Metrics Grid -->
+            <div class="grid grid-cols-2 gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50">
+                <span class="text-[11px] uppercase tracking-wide text-slate-400 font-semibold block">Liquid Cash</span>
+                <span id="liquidCashDisplay" class="text-sm font-bold text-slate-900 dark:text-white">$0</span>
+              </div>
+              <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50">
+                <span class="text-[11px] uppercase tracking-wide text-slate-400 font-semibold block">Debt Leverage</span>
+                <span id="debtLeverageDisplay" class="text-sm font-bold text-slate-900 dark:text-white">0%</span>
+              </div>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50">
+              <div class="flex items-start gap-2.5">
+                <div class="text-emerald-600 dark:text-emerald-400 font-bold text-base mt-0.5">💡</div>
+                <p id="financialTipText" class="text-xs text-emerald-900 dark:text-emerald-200 leading-relaxed">
+                  Your net worth is the single truest measure of your personal financial fitness. Track it monthly to build long-term momentum.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Snapshots / History Log -->
+        <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Net Worth Snapshots</h3>
+              <p class="text-[11px] text-slate-400">Save your progress across time</p>
+            </div>
+            <button id="saveSnapshotBtn" class="text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold px-3 py-1.5 rounded-xl transition">
+              + Snapshot
+            </button>
+          </div>
+          <div id="snapshotList" class="space-y-2 max-h-48 overflow-y-auto pr-1 text-xs">
+            <!-- Rendered snapshots -->
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Educational Guide / FAQ Section -->
+    <section class="mt-12 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 shadow-sm">
+      <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-6">Frequently Asked Questions About Net Worth</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-slate-600 dark:text-slate-400">
+        <div>
+          <h3 class="font-semibold text-slate-800 dark:text-slate-200 mb-2">What is Net Worth?</h3>
+          <p class="leading-relaxed">Net worth is simply what you own (assets) minus what you owe (liabilities). It is the most comprehensive measure of personal wealth.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-800 dark:text-slate-200 mb-2">What qualifies as an asset?</h3>
+          <p class="leading-relaxed">Cash, checking/savings, investment portfolios, retirement accounts (401k, IRAs), home equity, vehicles, and real property.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-slate-800 dark:text-slate-200 mb-2">How can I increase my net worth?</h3>
+          <p class="leading-relaxed">By either increasing asset values (saving more, investing steadily, growing equity) or aggressively paying down high-interest liabilities.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: Add / Edit Item -->
+  <div id="itemModal" class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-md w-full p-6 sm:p-7 transform transition-all">
+      <div class="flex items-center justify-between mb-5">
+        <h3 id="modalTitle" class="text-lg font-bold text-slate-900 dark:text-white">Add New Item</h3>
+        <button id="closeModalBtn" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <form id="itemForm" class="space-y-4">
+        <input type="hidden" id="itemType" value="asset">
+        <input type="hidden" id="editItemId" value="">
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">Category</label>
+          <select id="itemCategory" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            <!-- Dynamically populated according to itemType -->
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">Item Name</label>
+          <input type="text" id="itemName" required placeholder="e.g., High-Yield Savings Account" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">Estimated Value / Balance (<span class="currencySymbolDisplay">$</span>)</label>
+          <div class="relative">
+            <span class="currencySymbolDisplay absolute left-3.5 top-2.5 text-slate-400 font-semibold text-sm">$</span>
+            <input type="number" id="itemValue" step="any" min="0" required placeholder="0.00" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white rounded-xl pl-8 pr-3.5 py-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end space-x-3 pt-4">
+          <button type="button" id="cancelModalBtn" class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">Cancel</button>
+          <button type="submit" id="saveItemBtn" class="px-5 py-2 rounded-xl text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20 transition">Save Item</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Print Statement (Hidden on screen, visible during window.print()) -->
+  <div id="printSection" class="hidden print:block p-8 bg-white text-black">
+    <div class="border-b-2 border-slate-800 pb-4 mb-6">
+      <h1 class="text-2xl font-bold">Personal Net Worth Statement</h1>
+      <p class="text-sm text-slate-600">Generated on <span id="printDate"></span></p>
+    </div>
+    <div class="grid grid-cols-3 gap-4 mb-6 p-4 bg-slate-100 rounded">
+      <div>
+        <p class="text-xs uppercase font-semibold text-slate-500">Total Assets</p>
+        <p id="printTotalAssets" class="text-xl font-bold"></p>
+      </div>
+      <div>
+        <p class="text-xs uppercase font-semibold text-slate-500">Total Liabilities</p>
+        <p id="printTotalLiabilities" class="text-xl font-bold"></p>
+      </div>
+      <div>
+        <p class="text-xs uppercase font-semibold text-slate-500">Net Worth</p>
+        <p id="printNetWorth" class="text-xl font-bold"></p>
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-8">
+      <div>
+        <h2 class="font-bold border-b pb-1 mb-2">Assets</h2>
+        <table class="w-full text-xs" id="printAssetsTable">
+          <thead>
+            <tr class="border-b text-left">
+              <th class="py-1">Name</th>
+              <th class="py-1">Category</th>
+              <th class="py-1 text-right">Amount</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div>
+        <h2 class="font-bold border-b pb-1 mb-2">Liabilities</h2>
+        <table class="w-full text-xs" id="printLiabilitiesTable">
+          <thead>
+            <tr class="border-b text-left">
+              <th class="py-1">Name</th>
+              <th class="py-1">Category</th>
+              <th class="py-1 text-right">Amount</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <footer class="mt-16 border-t border-slate-200 dark:border-slate-800 py-8 text-center text-xs text-slate-400">
+    <p>WealthFlow — Secure & Private. All calculations are executed locally in your browser and stored on your device.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
